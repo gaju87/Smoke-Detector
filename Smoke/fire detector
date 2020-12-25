@@ -1,0 +1,78 @@
+#include <SoftwareSerial.h>
+#include <LiquidCrystal.h>
+
+SoftwareSerial mySerial(9,10);
+LiquidCrystal lcd(12, 11, 5, 4, 3, 2);
+
+int val;
+int tempPin=A1;
+float cel;
+boolean sendsms=false;
+
+void setup() 
+{
+  pinMode(13,OUTPUT);
+  lcd.begin(16, 2);
+  Serial.begin(9600);
+  mySerial.begin(9600);
+  delay(1000);
+}
+
+void loop()
+{
+  monitor_lm35();
+  delay(100);
+  if(cel>40)
+  {
+    digitalWrite(13,HIGH);
+    lcd.clear();
+    lcd.setCursor(4,0);
+    lcd.print("Alert!");
+    lcd.setCursor(2,1);
+    lcd.print("Fire Detected!");
+    if(sendsms==false)
+    {
+      Sendsms();
+      sendsms=true;
+    }
+  }
+  else
+  {
+    digitalWrite(13,LOW);
+    lcd.clear();
+    lcd.setCursor(0,0);
+    lcd.print("You are safe!");
+  }
+}
+
+void monitor_lm35()
+{
+  val=analogRead(tempPin);
+  float mv=(val/1024.0)*5000;
+  cel=mv/10;
+  float farh=(cel*9/5)+32;
+  Serial.print("TEMPERATURE=");
+  Serial.print(cel);
+  Serial.print("*C");
+  Serial.println();
+  delay(1000);
+  /* uncomment this to get temperature in farenhite
+   Serial.print("TEMPERATURE=");
+   Serial.print(farh);
+   Serial.print("*F");
+   Serial.println();*/
+}
+
+void Sendsms()
+{
+  mySerial.println("AT+CMGF=1");
+  delay(100);
+  mySerial.println("AT+CMGS=\"+918208411835\"\r");
+  delay(100);
+  mySerial.println("Emergency Alert!");
+  delay(100);
+  mySerial.println("Fire has been detected!");
+  delay(100);
+  mySerial.println((char)0x1A);
+  delay(100);
+}
